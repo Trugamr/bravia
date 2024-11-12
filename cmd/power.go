@@ -55,8 +55,13 @@ var powerStatusCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		status := result.Result[0].Status
-
-		fmt.Println(status)
+		if *result.Result != nil && len(*result.Result) > 0 {
+			status := (*result.Result)[0].Status
+			fmt.Println(status)
+			return
+		} else {
+			fmt.Println("Failed to get power status")
+			os.Exit(1)
+		}
 	},
 }

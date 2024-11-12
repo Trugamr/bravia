@@ -35,11 +35,13 @@ func NewClient(baseURL *url.URL) *Client {
 		client:  client,
 		BaseURL: baseURL,
 	}
-
-	// Initialize services
-	c.System = &SystemService{client: c}
-
+	c.initialize()
 	return c
+}
+
+// initialize initializes the client by setting up the services
+func (c *Client) initialize() {
+	c.System = &SystemService{client: c}
 }
 
 func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {
@@ -95,9 +97,6 @@ func (c *Client) copy() *Client {
 
 	// TODO: Preserve transport
 
-	// TODO: Re-use services instead of creating new instances
-	clone.System = &SystemService{client: &clone}
-
 	return &clone
 }
 
@@ -117,10 +116,28 @@ func (t *authPSKTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 // WithAuthPSK returns a new client configured to use the given PSK for authentication
 func (c *Client) WithAuthPSK(psk string) *Client {
 	clone := c.copy()
+	defer clone.initialize()
+
 	clone.client.Transport = &authPSKTransport{
 		client:  clone.client,
 		BaseURL: c.BaseURL,
 		PSK:     psk,
 	}
+
 	return clone
+}
+
+// Result is a generic response struct that conforms to the JSON response format
+type Result[T interface{}] struct {
+	Error  *[2]interface{} `json:"error,omitempty"`
+	Result *T              `json:"result,omitempty"`
+	ID     int             `json:"id"`
+}
+
+// Payload is a generic payload struct that conforms to the JSON request format
+type Payload[T interface{}] struct {
+	Method  string `json:"method"`
+	ID      int    `json:"id"`
+	Params  T      `json:"params"`
+	Version string `json:"version"`
 }

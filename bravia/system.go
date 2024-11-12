@@ -11,18 +11,20 @@ const (
 // SystemService handles requests related to system, such as power status
 type SystemService service
 
-// SetPowerStatusResponse is the response from the setPowerStatus method
-type SetPowerStatusResponse struct {
-	Result []struct{} `json:"result"`
-	ID     int        `json:"id"`
-}
+// SetPowerStatusResult is the response from the setPowerStatus method
+type SetPowerStatusResult Result[[]struct{}]
 
-func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResponse, *http.Response, error) {
-	body := map[string]interface{}{
-		"method":  "setPowerStatus",
-		"id":      1,
-		"params":  []map[string]bool{{"status": status}},
-		"version": "1.0",
+type SetPowerStatusParam []struct {
+	Status bool `json:"status"`
+}
+type SetPowerStatusPayload Payload[SetPowerStatusParam]
+
+func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResult, *http.Response, error) {
+	body := SetPowerStatusPayload{
+		Method:  "setPowerStatus",
+		ID:      1,
+		Params:  SetPowerStatusParam{{Status: status}},
+		Version: "1.0",
 	}
 
 	req, err := s.client.NewRequest(http.MethodPost, systemPath, body)
@@ -30,7 +32,7 @@ func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResponse, *h
 		return nil, nil, err
 	}
 
-	result := new(SetPowerStatusResponse)
+	result := new(SetPowerStatusResult)
 	resp, err := s.client.Do(req, result)
 	if err != nil {
 		return nil, resp, err
@@ -39,21 +41,18 @@ func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResponse, *h
 	return result, resp, nil
 }
 
-// GetPowerStatusResponse is the response from the getPowerStatus method
-type GetPowerStatusResponse struct {
-	Result []struct {
-		Status string `json:"status"`
-	} `json:"result"`
-	ID int `json:"id"`
-}
+// GetPowerStatusResult is the response from the getPowerStatus method
+type GetPowerStatusResult Result[[]struct {
+	Status string `json:"status"`
+}]
 
 // GetPowerStatus returns the power status of the TV
-func (s *SystemService) GetPowerStatus() (*GetPowerStatusResponse, *http.Response, error) {
-	body := map[string]interface{}{
-		"method":  "getPowerStatus",
-		"id":      1,
-		"params":  []interface{}{},
-		"version": "1.0",
+func (s *SystemService) GetPowerStatus() (*GetPowerStatusResult, *http.Response, error) {
+	body := Payload[[]struct{}]{
+		Method:  "getPowerStatus",
+		ID:      1,
+		Params:  []struct{}{},
+		Version: "1.0",
 	}
 
 	req, err := s.client.NewRequest(http.MethodPost, systemPath, body)
@@ -61,7 +60,7 @@ func (s *SystemService) GetPowerStatus() (*GetPowerStatusResponse, *http.Respons
 		return nil, nil, err
 	}
 
-	result := new(GetPowerStatusResponse)
+	result := new(GetPowerStatusResult)
 	resp, err := s.client.Do(req, result)
 	if err != nil {
 		return nil, resp, err
