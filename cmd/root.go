@@ -7,21 +7,38 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/trugamr/bravia-cli/bravia"
+	"github.com/trugamr/bravia-cli/config"
 )
 
-// client is the common client used for all commands
-var client *bravia.Client
+var (
+	client *bravia.Client
+	cfg    *config.Config
+)
 
 func init() {
-	// Create common client for all commands
-	baseURL, err := url.Parse(os.Getenv("BRAVIA_BASE_URL"))
-	if err != nil {
-		fmt.Println(err)
+	cfg = config.New()
+
+	// Add config flags to root command
+	cfg.AddFlags(rootCmd)
+
+	// Initialize configuration before any command runs
+	cobra.OnInitialize(initConfig)
+}
+
+func initConfig() {
+	if err := cfg.Load(); err != nil {
+		fmt.Println("Error loading config:", err)
 		os.Exit(1)
 	}
 
-	psk := os.Getenv("BRAVIA_PSK")
-	client = bravia.NewClient(baseURL).WithAuthPSK(psk)
+	// Create client using config values
+	baseURL, err := url.Parse(cfg.BaseURL)
+	if err != nil {
+		fmt.Println("Invalid base URL:", err)
+		os.Exit(1)
+	}
+
+	client = bravia.NewClient(baseURL).WithAuthPSK(cfg.PSK)
 }
 
 var rootCmd = &cobra.Command{

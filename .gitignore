@@ -1,0 +1,5 @@
+# Binaries
+*.exe
+
+# Local config
+config.yaml
