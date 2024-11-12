@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/trugamr/bravia-cli/bravia"
 )
 
 func init() {
@@ -27,8 +25,11 @@ var powerOnCmd = &cobra.Command{
 	Use:   "on",
 	Short: "Turn on the TV",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Implement command
-		cmd.Help()
+		_, _, err := client.System.SetPowerStatus(true)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -36,8 +37,11 @@ var powerOffCmd = &cobra.Command{
 	Use:   "off",
 	Short: "Turn off the TV",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Implement command
-		cmd.Help()
+		_, _, err := client.System.SetPowerStatus(false)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -45,19 +49,13 @@ var powerStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Check the power status of the TV",
 	Run: func(cmd *cobra.Command, args []string) {
-		baseURL, err := url.Parse(os.Getenv("BRAVIA_BASE_URL"))
+		result, _, err := client.System.GetPowerStatus()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		client := bravia.NewClient(baseURL)
-
-		status, err := client.System.GetPowerStatus()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		status := result.Result[0].Status
 
 		fmt.Println(status)
 	},
