@@ -134,6 +134,19 @@ type Result[T interface{}] struct {
 	ID     int             `json:"id"`
 }
 
+// HasError returns true if the result has an error
+func (r *Result[T]) HasError() bool {
+	return r.Error != nil
+}
+
+// ErrorMessage returns the error message if the result has an error
+func (r *Result[T]) ErrorMessage() string {
+	if r.HasError() {
+		return r.Error[1].(string)
+	}
+	return ""
+}
+
 // Payload is a generic payload struct that conforms to the JSON request format
 type Payload[T interface{}] struct {
 	Method  string `json:"method"`

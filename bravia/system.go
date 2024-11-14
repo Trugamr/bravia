@@ -1,6 +1,7 @@
 package bravia
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -12,18 +13,18 @@ const (
 type SystemService service
 
 // SetPowerStatusResult is the response from the setPowerStatus method
-type SetPowerStatusResult Result[[]struct{}]
+type SetPowerStatusResult = Result[[0]struct{}]
 
-type SetPowerStatusParam []struct {
+type setPowerStatusParams [1]struct {
 	Status bool `json:"status"`
 }
-type SetPowerStatusPayload Payload[SetPowerStatusParam]
+type setPowerStatusPayload Payload[setPowerStatusParams]
 
 func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResult, *http.Response, error) {
-	body := SetPowerStatusPayload{
+	body := setPowerStatusPayload{
 		Method:  "setPowerStatus",
 		ID:      1,
-		Params:  SetPowerStatusParam{{Status: status}},
+		Params:  setPowerStatusParams{{Status: status}},
 		Version: "1.0",
 	}
 
@@ -38,20 +39,27 @@ func (s *SystemService) SetPowerStatus(status bool) (*SetPowerStatusResult, *htt
 		return nil, resp, err
 	}
 
+	if result.HasError() {
+		return result, resp, errors.New(result.ErrorMessage())
+	}
+
 	return result, resp, nil
 }
 
 // GetPowerStatusResult is the response from the getPowerStatus method
-type GetPowerStatusResult Result[[]struct {
+type GetPowerStatusResult = Result[[1]struct {
 	Status string `json:"status"`
 }]
 
+type getPowerStatusParams [0]struct{}
+type getPowerStatusPayload Payload[getPowerStatusParams]
+
 // GetPowerStatus returns the power status of the TV
 func (s *SystemService) GetPowerStatus() (*GetPowerStatusResult, *http.Response, error) {
-	body := Payload[[]struct{}]{
+	body := getPowerStatusPayload{
 		Method:  "getPowerStatus",
 		ID:      1,
-		Params:  []struct{}{},
+		Params:  getPowerStatusParams{},
 		Version: "1.0",
 	}
 
@@ -64,6 +72,10 @@ func (s *SystemService) GetPowerStatus() (*GetPowerStatusResult, *http.Response,
 	resp, err := s.client.Do(req, result)
 	if err != nil {
 		return nil, resp, err
+	}
+
+	if result.HasError() {
+		return result, resp, errors.New(result.ErrorMessage())
 	}
 
 	return result, resp, nil
