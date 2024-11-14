@@ -27,6 +27,7 @@ type Client struct {
 
 	// Services used for interacting with different parts of the API
 	System *SystemService
+	Audio  *AudioService
 }
 
 func NewClient(baseURL *url.URL) *Client {
@@ -42,6 +43,7 @@ func NewClient(baseURL *url.URL) *Client {
 // initialize initializes the client by setting up the services
 func (c *Client) initialize() {
 	c.System = &SystemService{client: c}
+	c.Audio = &AudioService{client: c}
 }
 
 func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {

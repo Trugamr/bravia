@@ -8,9 +8,7 @@ import (
 )
 
 func init() {
-	powerCmd.AddCommand(powerOnCmd)
-	powerCmd.AddCommand(powerOffCmd)
-	powerCmd.AddCommand(powerStatusCmd)
+	powerCmd.AddCommand(powerOnCmd, powerOffCmd, powerStatusCmd)
 
 	rootCmd.AddCommand(powerCmd)
 }
