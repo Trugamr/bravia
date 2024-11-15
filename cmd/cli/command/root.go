@@ -1,4 +1,4 @@
-package cmd
+package command
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/trugamr/bravia-cli/bravia"
-	"github.com/trugamr/bravia-cli/config"
+	"github.com/trugamr/bravia/api"
+	"github.com/trugamr/bravia/cmd/cli/config"
 )
 
 var (
-	client *bravia.Client
+	client *api.Client
 	cfg    *config.Config
 )
 
@@ -27,18 +27,18 @@ func init() {
 
 func initConfig() {
 	if err := cfg.Load(); err != nil {
-		fmt.Println("Error loading config:", err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 
 	// Create client using config values
 	baseURL, err := url.Parse(cfg.BaseURL)
 	if err != nil {
-		fmt.Println("Invalid base URL:", err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 
-	client = bravia.NewClient(baseURL).WithAuthPSK(cfg.PSK)
+	client = api.NewClient(baseURL).WithAuthPSK(cfg.PSK)
 }
 
 var rootCmd = &cobra.Command{
@@ -49,9 +49,10 @@ Allows you to control volume, switch inputs, launch apps, and perform other remo
 through simple commands.`,
 }
 
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+// ExecuteRoot is the entrypoint for the CLI
+func ExecuteRoot() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 }

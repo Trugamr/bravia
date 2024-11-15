@@ -1,4 +1,4 @@
-module github.com/trugamr/bravia-cli
+module github.com/trugamr/bravia
 
 go 1.22.3
 

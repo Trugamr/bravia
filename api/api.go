@@ -1,4 +1,4 @@
-package bravia
+package api
 
 import (
 	"bytes"
