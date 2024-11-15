@@ -3,6 +3,7 @@ module github.com/trugamr/bravia-cli
 go 1.22.3
 
 require (
+	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 )
