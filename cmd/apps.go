@@ -12,7 +12,7 @@ import (
 func init() {
 	appsCmd.AddCommand(appsListCmd, appsOpenCmd)
 
-	rootCmd.AddCommand(appsCmd, appsListCmd)
+	rootCmd.AddCommand(appsCmd)
 
 	// Define flags for the apps open command
 	appsOpenCmd.Flags().StringP("uri", "u", "", "URI of the app to open")
