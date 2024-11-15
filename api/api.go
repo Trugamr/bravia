@@ -95,26 +95,27 @@ func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
 // copy returns a copy of the client
 func (c *Client) copy() *Client {
 	clone := Client{
-		client:  &http.Client{},
+		client: &http.Client{
+			Transport: c.client.Transport,
+		},
 		BaseURL: c.BaseURL,
 	}
-
-	// TODO: Preserve transport
 
 	return &clone
 }
 
 // authPSKTransport is an http.RoundTripper that adds the pre-shared key header to requests
 type authPSKTransport struct {
-	client  *http.Client
-	BaseURL *url.URL
-	PSK     string
+	// transport is the RoundTripper to use for the request
+	transport http.RoundTripper
+	// PSK is the pre-shared key to use for the request
+	PSK string
 }
 
 // RoundTrip implements http.RoundTripper
 func (t *authPSKTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set(headerAuthPSK, t.PSK)
-	return http.DefaultTransport.RoundTrip(req)
+	return t.transport.RoundTrip(req)
 }
 
 // WithAuthPSK returns a new client configured to use the given PSK for authentication
@@ -122,10 +123,15 @@ func (c *Client) WithAuthPSK(psk string) *Client {
 	clone := c.copy()
 	defer clone.initialize()
 
+	// Preserve the transport if it exists
+	nextTransport := c.client.Transport
+	if nextTransport == nil {
+		nextTransport = http.DefaultTransport
+	}
+
 	clone.client.Transport = &authPSKTransport{
-		client:  clone.client,
-		BaseURL: c.BaseURL,
-		PSK:     psk,
+		transport: nextTransport,
+		PSK:       psk,
 	}
 
 	return clone
