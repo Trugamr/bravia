@@ -3,3 +3,6 @@
 
 # Local config
 config.yaml
+
+# GoReleaser
+dist/
