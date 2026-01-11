@@ -1,7 +1,9 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,6 +13,9 @@ import (
 	"github.com/trugamr/bravia/cmd/remote/config"
 	"github.com/trugamr/bravia/cmd/remote/handlers"
 )
+
+//go:embed web
+var webFS embed.FS
 
 func main() {
 	// Load configuration
@@ -54,8 +59,12 @@ func main() {
 
 	mux.HandleFunc("/api/sse", h.SSEHandler)
 
-	// Static file routes
-	mux.Handle("/", http.FileServer(http.Dir("./cmd/remote/web")))
+	// Static file routes - serve embedded web files
+	webRoot, err := fs.Sub(webFS, "web")
+	if err != nil {
+		log.Fatal(err)
+	}
+	mux.Handle("/", http.FileServer(http.FS(webRoot)))
 
 	// Add CORS middleware
 	corsHandler := corsMiddleware(mux)
