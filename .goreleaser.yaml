@@ -15,6 +15,15 @@ builds:
       - darwin
     dir: ./cmd/cli
     binary: tv
+  - id: remote
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    dir: ./cmd/remote
+    binary: remote
 
 archives:
   - format: tar.gz
