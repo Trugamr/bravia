@@ -30,6 +30,7 @@ type Client struct {
 	Audio      *AudioService
 	AppControl *AppControlService
 	AVContent  *AVContentService
+	IRCC       *IRCCService
 }
 
 func NewClient(baseURL *url.URL) *Client {
@@ -48,6 +49,7 @@ func (c *Client) initialize() {
 	c.Audio = &AudioService{client: c}
 	c.AppControl = &AppControlService{client: c}
 	c.AVContent = &AVContentService{client: c}
+	c.IRCC = &IRCCService{client: c}
 }
 
 func (c *Client) NewRequest(method, path string, body interface{}) (*http.Request, error) {

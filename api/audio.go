@@ -53,3 +53,80 @@ func (s *AudioService) SetAudioVolume(volume, target string) (*SetAudioVolumeRes
 
 	return result, resp, nil
 }
+
+// VolumeInfo represents volume information for a target
+type VolumeInfo struct {
+	Target    string `json:"target"`
+	Volume    int    `json:"volume"`
+	Mute      bool   `json:"mute"`
+	MaxVolume int    `json:"maxVolume"`
+	MinVolume int    `json:"minVolume"`
+}
+
+// GetVolumeInformationResult is the response from the getVolumeInformation method
+type GetVolumeInformationResult = Result[[1][]VolumeInfo]
+
+type getVolumeInformationParams [0]struct{}
+type getVolumeInformationPayload Payload[getVolumeInformationParams]
+
+// GetVolumeInformation returns volume information for all targets
+func (s *AudioService) GetVolumeInformation() (*GetVolumeInformationResult, *http.Response, error) {
+	body := getVolumeInformationPayload{
+		Method:  "getVolumeInformation",
+		ID:      1,
+		Params:  getVolumeInformationParams{},
+		Version: "1.0",
+	}
+
+	req, err := s.client.NewRequest(http.MethodPost, audioPath, body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	result := new(GetVolumeInformationResult)
+	resp, err := s.client.Do(req, result)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if result.HasError() {
+		return result, resp, errors.New(result.ErrorMessage())
+	}
+
+	return result, resp, nil
+}
+
+// SetAudioMuteResult is the response from the setAudioMute method
+type SetAudioMuteResult = Result[[1]bool]
+
+type setAudioMuteParams [1]struct {
+	Status bool `json:"status"`
+}
+type setAudioMutePayload Payload[setAudioMuteParams]
+
+// SetAudioMute sets the audio mute status
+func (s *AudioService) SetAudioMute(status bool) (*SetAudioMuteResult, *http.Response, error) {
+	body := setAudioMutePayload{
+		Method:  "setAudioMute",
+		ID:      1,
+		Params:  setAudioMuteParams{{Status: status}},
+		Version: "1.0",
+	}
+
+	req, err := s.client.NewRequest(http.MethodPost, audioPath, body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	result := new(SetAudioMuteResult)
+	resp, err := s.client.Do(req, result)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if result.HasError() {
+		return result, resp, errors.New(result.ErrorMessage())
+	}
+
+	return result, resp, nil
+}
