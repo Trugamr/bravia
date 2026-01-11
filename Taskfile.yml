@@ -1,0 +1,70 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build locally using goreleaser
+    cmds:
+      - goreleaser build --snapshot --clean
+
+  release:
+    desc: Build release locally (snapshot mode)
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  release:local:
+    desc: Build release for current platform only
+    cmds:
+      - goreleaser build --single-target --snapshot --clean
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf dist/
+
+  dev:build:
+    desc: Quick build for current platform
+    cmds:
+      - go build -o ./bravia ./cmd/cli
+      - go build -o ./remote ./cmd/remote
+
+  run:cli:
+    desc: Run bravia CLI
+    cmds:
+      - go run ./cmd/cli {{.CLI_ARGS}}
+
+  run:remote:
+    desc: Run remote server
+    cmds:
+      - go run ./cmd/remote {{.CLI_ARGS}}
+
+  install:
+    desc: Install goreleaser if not present
+    cmds:
+      - |
+        if ! command -v goreleaser &> /dev/null; then
+          echo "Installing goreleaser..."
+          go install github.com/goreleaser/goreleaser@latest
+        else
+          echo "goreleaser already installed"
+        fi
+    silent: true
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run linter
+    cmds:
+      - |
+        if ! command -v golangci-lint &> /dev/null; then
+          echo "golangci-lint not found, skipping..."
+        else
+          golangci-lint run
+        fi

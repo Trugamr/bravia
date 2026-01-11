@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bravia Remote</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { overflow-x: hidden; }
+
+        /* Simple button styles */
+        .btn {
+            border-radius: 0.5rem;
+            transition: opacity 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:active {
+            opacity: 0.7;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid rgb(59, 130, 246);
+            outline-offset: 2px;
+        }
+
+        .btn svg {
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .btn.flex-col {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* App icons */
+        .app-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.375rem;
+            object-fit: cover;
+            background-color: rgb(241 245 249);
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.error {
+            background: rgba(239, 68, 68, 0.95);
+        }
+
+        .toast.success {
+            background: rgba(34, 197, 94, 0.95);
+        }
+
+        /* Loading pulse for buttons */
+        @keyframes pulse-button {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .btn-loading {
+            animation: pulse-button 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Loading skeleton shimmer */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .animate-pulse {
+            background: linear-gradient(
+                90deg,
+                rgb(241 245 249) 0%,
+                rgb(226 232 240) 50%,
+                rgb(241 245 249) 100%
+            );
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgb(241 245 249);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgb(203 213 225);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgb(148 163 184);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Status Bar -->
+    <div class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+        <h1 class="text-lg font-bold text-slate-800">BRAVIA Remote</h1>
+        <div id="status" class="text-sm text-slate-400 flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+            <span class="text-xs">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- Main Grid Container -->
+    <div class="container mx-auto p-4 max-w-7xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <!-- Power & Quick Actions -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Power</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-ircc="AAAAAQAAAAEAAAAVAw==" class="btn bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                        <span class="text-xs font-medium">Power</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAuAw==" class="btn bg-green-50 hover:bg-green-100 active:bg-green-200 text-green-700 py-3 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                        </svg>
+                        <span class="text-xs font-medium">Wake</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAvAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 7a5 5 0 0 0-10 0v7a5 5 0 0 0 10 0V7z"></path>
+                            <path d="M7 17a5 5 0 0 0 10 0"></path>
+                        </svg>
+                        <span class="text-xs font-medium">Sleep</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Navigation</h2>
+                <div class="grid grid-cols-3 grid-rows-3 gap-1">
+                    <div></div>
+                    <button data-ircc="AAAAAQAAAAEAAAB0Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-t-lg py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </button>
+                    <div></div>
+                    <button data-ircc="AAAAAQAAAAEAAAA0Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-l-lg py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAABlAw==" class="btn bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full py-3 font-semibold text-sm">
+                        OK
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAzAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-r-lg py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <div></div>
+                    <button data-ircc="AAAAAQAAAAEAAAB1Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-b-lg py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button data-ircc="AAAAAgAAAJcAAAAjAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        <span class="text-xs font-medium">Back</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAABgAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        </svg>
+                        <span class="text-xs font-medium">Home</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Volume -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Volume</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-ircc="AAAAAQAAAAEAAAASAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-4 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">+</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAUAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-4 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <line x1="23" y1="9" x2="17" y2="15"></line>
+                            <line x1="17" y1="9" x2="23" y2="15"></line>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">Mute</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAATAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-4 flex-col">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">-</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Playback</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-ircc="AAAAAgAAAJcAAAAbAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 5L2 12l9 7V5zm11 0l-9 7 9 7V5z"></path>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAaAw==" class="btn bg-green-50 hover:bg-green-100 active:bg-green-200 text-green-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAcAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13 5v14l9-7-9-7zm-11 0v14l9-7-9-7z"></path>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAA8Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAZAw==" class="btn bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAA9Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAYAw==" class="btn bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12"></rect>
+                        </svg>
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAgAw==" class="btn bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Channel & Input -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Channel & Input</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button data-ircc="AAAAAQAAAAEAAAAQAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                        <span class="text-xs font-medium">CH+</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAlAw==" class="btn bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-700 py-3 row-span-2">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                            <polyline points="17 2 12 7 7 2"></polyline>
+                        </svg>
+                        <span class="text-xs font-medium">INPUT</span>
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAARAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        <span class="text-xs font-medium">CH-</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-ircc="AAAAAgAAABoAAABaAw==" class="btn bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 py-2 text-xs">HDMI 1</button>
+                    <button data-ircc="AAAAAgAAABoAAABbAw==" class="btn bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 py-2 text-xs">HDMI 2</button>
+                    <button data-ircc="AAAAAgAAABoAAABcAw==" class="btn bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 py-2 text-xs">HDMI 3</button>
+                </div>
+            </div>
+
+            <!-- Number Pad -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Number Pad</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-ircc="AAAAAQAAAAEAAAAAAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">1</button>
+                    <button data-ircc="AAAAAQAAAAEAAAABAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">2</button>
+                    <button data-ircc="AAAAAQAAAAEAAAACAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">3</button>
+                    <button data-ircc="AAAAAQAAAAEAAAADAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">4</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAEAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">5</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAFAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">6</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAGAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">7</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAHAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">8</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAIAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">9</button>
+                    <button data-ircc="AAAAAgAAAJcAAAAdAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">•</button>
+                    <button data-ircc="AAAAAQAAAAEAAAAJAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-3 font-semibold">0</button>
+                    <button data-ircc="AAAAAgAAAKQAAABbAw==" class="btn bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-700 py-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                            <line x1="7" y1="8" x2="17" y2="8"></line>
+                            <line x1="7" y1="12" x2="17" y2="12"></line>
+                            <line x1="7" y1="16" x2="13" y2="16"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Apps -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3 lg:col-span-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Apps</h2>
+                    <button id="load-apps" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Load All</button>
+                </div>
+                <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    <button data-ircc="AAAAAgAAABoAAAB8Aw==" class="btn bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 flex-col">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">Netflix</span>
+                    </button>
+                    <button data-ircc="AAAAAgAAAMQAAABHAw==" class="btn bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 flex-col">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">YouTube</span>
+                    </button>
+                    <button data-ircc="AAAAAgAAAMQAAABGAw==" class="btn bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 flex-col">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 6H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 9l-5-3 5-3v6zm9 0V9l-5 3 5 3z"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">Google Play</span>
+                    </button>
+                    <button data-ircc="AAAAAgAAAMQAAAAqAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-4 flex-col">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"></path>
+                        </svg>
+                        <span class="text-xs font-medium mt-1">Apps</span>
+                    </button>
+                </div>
+                <div id="apps-grid" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+            </div>
+
+            <!-- Color Buttons & Functions -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Functions</h2>
+                <div class="grid grid-cols-4 gap-2">
+                    <button data-ircc="AAAAAgAAAJcAAAAlAw==" class="btn bg-red-500 hover:bg-red-600 text-white h-10"></button>
+                    <button data-ircc="AAAAAgAAAJcAAAAmAw==" class="btn bg-green-500 hover:bg-green-600 text-white h-10"></button>
+                    <button data-ircc="AAAAAgAAAJcAAAAnAw==" class="btn bg-yellow-400 hover:bg-yellow-500 text-white h-10"></button>
+                    <button data-ircc="AAAAAgAAAJcAAAAkAw==" class="btn bg-blue-500 hover:bg-blue-600 text-white h-10"></button>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button data-ircc="AAAAAQAAAAEAAAA6Aw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        Display
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAAAXAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18V5l12-2v13"></path>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <circle cx="18" cy="16" r="3"></circle>
+                        </svg>
+                        Audio
+                    </button>
+                    <button data-ircc="AAAAAgAAAJcAAAAoAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Subtitle
+                    </button>
+                    <button data-ircc="AAAAAgAAAMQAAABLAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="12" cy="5" r="1"></circle>
+                            <circle cx="12" cy="19" r="1"></circle>
+                        </svg>
+                        Menu
+                    </button>
+                    <button data-ircc="AAAAAgAAAMQAAABNAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Help
+                    </button>
+                    <button data-ircc="AAAAAQAAAAEAAABjAw==" class="btn bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 py-2.5 text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Exit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="bg-white rounded-lg shadow-sm p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Inputs</h2>
+                    <button id="load-inputs" class="text-xs text-purple-600 hover:text-purple-700 font-medium">Load All</button>
+                </div>
+                <div id="inputs-grid" class="grid grid-cols-1 gap-2">
+                    <div class="text-center py-4 text-slate-400 text-xs">Click "Load All" to view inputs</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
