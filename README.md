@@ -128,6 +128,41 @@ The web remote provides:
 
 Access the remote at `http://localhost:3000` (or your configured port).
 
+### Docker
+
+The web remote is available as a multi-architecture image for AMD64 and ARM64:
+
+```bash
+docker pull ghcr.io/trugamr/bravia-remote:latest
+
+docker run --detach \
+  --name bravia-remote \
+  --restart unless-stopped \
+  --publish 8080:8080 \
+  --env BRAVIA_BASE_URL=http://your-tv-ip \
+  --env BRAVIA_PSK=your-pre-shared-key \
+  ghcr.io/trugamr/bravia-remote:latest
+```
+
+You can also use Docker Compose:
+
+```yaml
+services:
+  bravia-remote:
+    image: ghcr.io/trugamr/bravia-remote:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      BRAVIA_BASE_URL: http://your-tv-ip
+      BRAVIA_PSK: your-pre-shared-key
+      BRAVIA_PORT: "8080"
+```
+
+Open `http://localhost:8080` after the container starts. For production, provide
+`BRAVIA_PSK` through an environment file or secret manager rather than committing
+it to a Compose file.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
