@@ -20,6 +20,19 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+      - uses: go-task/setup-task@v2
+        with:
+          version: 3.51.1
+      - name: Cache Tailwind CLI
+        uses: actions/cache@v5
+        with:
+          path: .bin/tailwindcss
+          key: tailwind-${{ runner.os }}-${{ runner.arch }}-v4.3.1
+      - name: Verify bundled stylesheet
+        run: |
+          task web:build
+          git diff --exit-code -- cmd/remote/web/styles.css
+          ! grep --quiet "cdn.tailwindcss.com" cmd/remote/web/index.html
       - run: go test ./...
       - uses: goreleaser/goreleaser-action@v7
         with:
@@ -55,12 +68,17 @@ jobs:
           test "$(docker inspect --format '{{.Config.User}}' bravia-remote:test)" = "nonroot:nonroot"
           for attempt in $(seq 1 10); do
             if curl --fail --silent http://127.0.0.1:18080/ >/dev/null; then
-              exit 0
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              docker logs bravia-remote-test
+              exit 1
             fi
             sleep 1
           done
-          docker logs bravia-remote-test
-          exit 1
+          curl --fail --silent --output /tmp/bravia-styles.css \
+            http://127.0.0.1:18080/styles.css
+          grep --quiet "tailwindcss v4.3.1" /tmp/bravia-styles.css
 
       - name: Validate multi-platform build
         uses: docker/build-push-action@v7

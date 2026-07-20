@@ -6,3 +6,6 @@ config.yaml
 
 # GoReleaser
 dist/
+
+# Local development tools
+.bin/
