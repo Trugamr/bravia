@@ -1,0 +1,11 @@
+# GoReleaser places each prebuilt remote binary under its target platform.
+FROM gcr.io/distroless/static-debian12
+
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/remote /usr/local/bin/remote
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/usr/local/bin/remote"]

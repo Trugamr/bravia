@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          install-only: true
+      - run: goreleaser check
+      - run: goreleaser build --snapshot --clean --single-target
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build native test image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: bravia-remote:test
+          cache-from: type=gha
+
+      - name: Smoke test web remote
+        run: |
+          docker run --detach --rm --name bravia-remote-test \
+            --env BRAVIA_BASE_URL=http://127.0.0.1 \
+            --env BRAVIA_PSK=test \
+            --publish 18080:8080 \
+            bravia-remote:test
+          trap 'docker stop bravia-remote-test' EXIT
+          test "$(docker inspect --format '{{.Config.User}}' bravia-remote:test)" = "nonroot:nonroot"
+          for attempt in $(seq 1 10); do
+            if curl --fail --silent http://127.0.0.1:18080/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs bravia-remote-test
+          exit 1
+
+      - name: Validate multi-platform build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -26,7 +26,8 @@ builds:
     binary: remote
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -36,7 +37,31 @@ archives:
       {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
+
+dockers_v2:
+  - id: remote
+    ids:
+      - remote
+    images:
+      - ghcr.io/trugamr/bravia-remote
+    tags:
+      - "{{ .Version }}"
+      - latest
+    dockerfile: docker/Dockerfile.template
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: bravia remote
+      org.opencontainers.image.description: Web remote control for Sony Bravia TVs
+      org.opencontainers.image.url: https://github.com/trugamr/bravia
+      org.opencontainers.image.source: https://github.com/trugamr/bravia
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.licenses: MIT
 
 changelog:
   sort: asc
