@@ -51,6 +51,8 @@ task release:local      # Build for current platform only
 task dev:build          # Quick build for development
 task run:cli            # Run bravia CLI
 task run:remote         # Run remote server
+task web:build          # Rebuild the embedded web stylesheet
+task web:watch          # Rebuild the stylesheet while editing the web remote
 task clean              # Clean build artifacts
 task test               # Run tests
 task fmt                # Format code
@@ -127,6 +129,9 @@ The web remote provides:
 - Quick access to HDMI inputs
 
 Access the remote at `http://localhost:3000` (or your configured port).
+
+The compiled stylesheet is committed so regular Go and Docker builds do not
+need Node.js or Tailwind. Run `task web:watch` when changing the web interface.
 
 ### Docker
 

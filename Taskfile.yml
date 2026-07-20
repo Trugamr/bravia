@@ -1,5 +1,9 @@
 version: '3'
 
+vars:
+  TAILWIND_VERSION: v4.3.1
+  TAILWIND_BIN: .bin/tailwindcss
+
 tasks:
   build:
     desc: Build locally using goreleaser
@@ -36,6 +40,37 @@ tasks:
     desc: Run remote server
     cmds:
       - go run ./cmd/remote {{.CLI_ARGS}}
+
+  web:install:
+    desc: Install the pinned standalone Tailwind CSS CLI
+    status:
+      - test -x {{.TAILWIND_BIN}}
+      - '{{.TAILWIND_BIN}} --help | grep --quiet "tailwindcss {{.TAILWIND_VERSION}}"'
+    cmds:
+      - mkdir -p .bin
+      - |
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64) asset=tailwindcss-linux-x64 ;;
+          Linux-aarch64|Linux-arm64) asset=tailwindcss-linux-arm64 ;;
+          Darwin-x86_64) asset=tailwindcss-macos-x64 ;;
+          Darwin-arm64) asset=tailwindcss-macos-arm64 ;;
+          *) echo "Unsupported platform: $(uname -s)-$(uname -m)" >&2; exit 1 ;;
+        esac
+        curl --fail --location --output {{.TAILWIND_BIN}} \
+          "https://github.com/tailwindlabs/tailwindcss/releases/download/{{.TAILWIND_VERSION}}/${asset}"
+        chmod +x {{.TAILWIND_BIN}}
+
+  web:build:
+    desc: Build the embedded web remote stylesheet
+    deps: [web:install]
+    cmds:
+      - '{{.TAILWIND_BIN}} --input ./cmd/remote/styles.css --output ./cmd/remote/web/styles.css --minify'
+
+  web:watch:
+    desc: Rebuild the web remote stylesheet when its sources change
+    deps: [web:install]
+    cmds:
+      - '{{.TAILWIND_BIN}} --input ./cmd/remote/styles.css --output ./cmd/remote/web/styles.css --watch'
 
   install:
     desc: Install goreleaser if not present

@@ -14,6 +14,19 @@ function showStatus(message, isError = false) {
     showToast(message, isError ? 'error' : 'success');
 }
 
+function setLoadButtonState(button, state) {
+    button.disabled = state === 'loading';
+
+    const labels = {
+        idle: 'Load all',
+        loading: 'Loading…',
+        loaded: 'Reload',
+        error: 'Retry'
+    };
+
+    button.textContent = labels[state];
+}
+
 async function apiCall(url, options = {}) {
     try {
         const response = await fetch(url, {
@@ -84,13 +97,13 @@ async function loadApps() {
 
     // Show loading skeleton
     appsGrid.innerHTML = Array(6).fill(0).map(() => `
-        <div class="btn bg-slate-100 py-4 flex-col border border-slate-200 animate-pulse">
+        <div class="btn bg-slate-100 py-4 flex-col border border-slate-200 loading-skeleton">
             <div class="w-8 h-8 bg-slate-200 rounded"></div>
             <div class="w-16 h-3 bg-slate-200 rounded mt-1"></div>
         </div>
     `).join('');
 
-    loadButton.style.display = 'none';
+    setLoadButtonState(loadButton, 'loading');
 
     try {
         const result = await apiCall('/api/apps');
@@ -99,14 +112,14 @@ async function loadApps() {
         appsGrid.innerHTML = '';
 
         if (apps.length === 0) {
-            appsGrid.innerHTML = '<div class="col-span-full text-center py-4 text-slate-500 text-sm">No apps found</div>';
-            loadButton.style.display = 'block';
+            appsGrid.innerHTML = '<div class="empty-state col-span-full">No apps found</div>';
+            setLoadButtonState(loadButton, 'loaded');
             return;
         }
 
-        apps.forEach((app, index) => {
+        apps.forEach((app) => {
             const appEl = document.createElement('button');
-            appEl.className = 'btn bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 active:from-slate-200 active:to-slate-300 text-slate-700 py-4 flex-col border border-slate-200';
+            appEl.className = 'btn bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 py-4 flex-col border border-slate-200';
 
             // Create image element for app icon
             const iconEl = document.createElement('img');
@@ -160,16 +173,16 @@ async function loadApps() {
             appsGrid.appendChild(appEl);
         });
 
+        setLoadButtonState(loadButton, 'loaded');
         showToast(`Loaded ${apps.length} apps`, 'success');
     } catch (error) {
-        appsGrid.innerHTML = '<div class="col-span-full text-center py-4 text-red-500 text-sm">Failed to load apps. <button class="text-blue-600 underline" onclick="loadApps()">Retry</button></div>';
+        appsGrid.innerHTML = '<div class="empty-state empty-state-error col-span-full">Failed to load apps</div>';
+        setLoadButtonState(loadButton, 'error');
         console.error('Failed to load apps:', error);
     }
 }
 
-// Auto-load apps on page load
 document.getElementById('load-apps').addEventListener('click', loadApps);
-setTimeout(loadApps, 500); // Auto-load after page loads
 
 // Input icon helper
 function getInputIcon(inputTitle) {
@@ -186,10 +199,17 @@ function getInputIcon(inputTitle) {
     }
 }
 
-// Inputs
-document.getElementById('load-inputs').addEventListener('click', async () => {
+// Inputs loading
+async function loadInputs() {
     const inputsGrid = document.getElementById('inputs-grid');
-    inputsGrid.innerHTML = '<div class="text-center py-4 text-slate-500 text-sm">Loading inputs...</div>';
+    const loadButton = document.getElementById('load-inputs');
+
+    inputsGrid.innerHTML = Array(3).fill(0).map(() => `
+        <div class="btn bg-slate-100 border border-slate-200 loading-skeleton">
+            <div class="w-24 h-3 bg-slate-200 rounded"></div>
+        </div>
+    `).join('');
+    setLoadButtonState(loadButton, 'loading');
 
     try {
         const result = await apiCall('/api/inputs');
@@ -198,16 +218,17 @@ document.getElementById('load-inputs').addEventListener('click', async () => {
         inputsGrid.innerHTML = '';
 
         if (inputs.length === 0) {
-            inputsGrid.innerHTML = '<div class="text-center py-4 text-slate-500 text-sm">No inputs found</div>';
+            inputsGrid.innerHTML = '<div class="empty-state">No inputs found</div>';
+            setLoadButtonState(loadButton, 'loaded');
             return;
         }
 
-        inputs.forEach((input, index) => {
+        inputs.forEach((input) => {
             const inputEl = document.createElement('button');
             const label = input.label ? ` (${input.label})` : '';
             const displayText = `${input.title}${label}`;
 
-            inputEl.className = 'btn bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 active:from-purple-200 active:to-purple-300 text-purple-700 py-3 px-4 justify-start border border-purple-200';
+            inputEl.className = 'btn bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 py-3 px-4 justify-start border border-slate-200';
             inputEl.innerHTML = `
                 ${getInputIcon(input.title)}
                 <span class="text-sm font-medium">${displayText}</span>
@@ -231,12 +252,16 @@ document.getElementById('load-inputs').addEventListener('click', async () => {
             inputsGrid.appendChild(inputEl);
         });
 
+        setLoadButtonState(loadButton, 'loaded');
         showToast(`Loaded ${inputs.length} inputs`, 'success');
     } catch (error) {
-        inputsGrid.innerHTML = '<div class="text-center py-4 text-red-500 text-sm">Failed to load inputs</div>';
+        inputsGrid.innerHTML = '<div class="empty-state empty-state-error">Failed to load inputs</div>';
+        setLoadButtonState(loadButton, 'error');
         console.error('Failed to load inputs:', error);
     }
-});
+}
+
+document.getElementById('load-inputs').addEventListener('click', loadInputs);
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
